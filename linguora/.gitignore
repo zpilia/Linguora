@@ -4,6 +4,7 @@
 //
 //  Created by Zoé Pilia on 17/07/2025.
 //
+
 ### Xcode ###
 ## User settings
 xcuserdata/
@@ -20,3 +21,6 @@ xcuserdata/
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+### App Secrets ###
+linguora/Secrets.plist
