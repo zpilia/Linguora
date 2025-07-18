@@ -11,7 +11,10 @@ import SwiftUI
 struct linguoraApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack {
+                ContentView()
+                    .navigationTitle("Accueil")
+            }
         }
     }
 }
