@@ -29,8 +29,7 @@ struct ContentView: View {
                                 Picker("", selection: $sourceLang) {
                                     Text("🌐").tag("")
                                     ForEach(languages, id: \.language) { lang in
-                                        Text("\(flag(for: lang.language)) \(lang.name)")
-                                            .tag(lang.language)
+                                        Text("\(flag(for: lang.language)) \(lang.name)").tag(lang.language)
                                     }
                                 }
                                 .pickerStyle(MenuPickerStyle())
@@ -53,8 +52,7 @@ struct ContentView: View {
                                 Picker("", selection: $targetLang) {
                                     Text("🌐").tag("")
                                     ForEach(languages, id: \.language) { lang in
-                                        Text("\(flag(for: lang.language)) \(lang.name)")
-                                            .tag(lang.language)
+                                        Text("\(flag(for: lang.language)) \(lang.name)").tag(lang.language)
                                     }
                                 }
                                 .pickerStyle(MenuPickerStyle())
@@ -98,7 +96,7 @@ struct ContentView: View {
                             .cornerRadius(10)
                         }
 
-                        // 📷🎤 Boutons image et micro
+                        // 📷🎤📄 Boutons image, micro, document
                         HStack(spacing: 30) {
                             NavigationLink(destination: ImageTranslationView()) {
                                 Image(systemName: "camera")
@@ -117,6 +115,15 @@ struct ContentView: View {
                                     .clipShape(Circle())
                             }
                             .accessibilityLabel("Traduire avec la voix")
+
+                            NavigationLink(destination: DocumentTranslationView()) {
+                                Image(systemName: "doc.text.fill")
+                                    .font(.title2)
+                                    .padding(10)
+                                    .background(Color.gray.opacity(0.2))
+                                    .clipShape(Circle())
+                            }
+                            .accessibilityLabel("Traduire un document")
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)
@@ -152,8 +159,6 @@ struct ContentView: View {
         }
     }
 }
-
-
 
 #Preview {
     ContentView()
