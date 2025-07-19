@@ -14,9 +14,10 @@ struct ContentView: View {
     @State private var targetLang = ""
     @State private var languages: [Language] = []
     @State private var isTranslating = false
+    @State private var selectedLangCode: String?
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if languages.isEmpty {
@@ -81,6 +82,7 @@ struct ContentView: View {
                             TranslationService.translate(inputText, to: targetLang) { result in
                                 translatedText = result ?? ""
                                 isTranslating = false
+                                selectedLangCode = targetLang
                             }
                         }) {
                             HStack {
@@ -128,7 +130,6 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)
                         .padding(.bottom, 5)
-                        .frame(maxWidth: .infinity, alignment: .center)
 
                         // 🧾 Zone de traduction
                         Text("Traduction :").font(.headline)
@@ -145,6 +146,28 @@ struct ContentView: View {
                         }
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
+
+                        // 🌍🌍 Deux boutons sur la même ligne (placé ici)
+                        HStack(spacing: 12) {
+                            NavigationLink(value: selectedLangCode ?? "") {
+                                Text("Pays cible 🌍")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(translatedText.isEmpty ? Color.gray : Color.green)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(translatedText.isEmpty)
+
+                            NavigationLink(destination: CurrentLocationCountryView()) {
+                                Text("Pays actuel 📍")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.orange)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                        }
                     }
                 }
                 .padding()
@@ -155,6 +178,10 @@ struct ContentView: View {
                 DeepLService.fetchTargetLanguages { langs in
                     self.languages = langs
                 }
+            }
+            // 🌐 Redirection par code langue
+            .navigationDestination(for: String.self) { langCode in
+                CountryDetailView(langCode: langCode)
             }
         }
     }
