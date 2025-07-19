@@ -18,6 +18,10 @@ struct VoiceTranslationView: View {
     @State private var targetLang = ""
     @State private var languages: [Language] = []
 
+    @State private var showShareSheet = false
+    @State private var showToast = false
+    @State private var toastMessage = ""
+
     @StateObject private var speechRecognizer = SpeechRecognizer()
 
     var body: some View {
@@ -77,8 +81,6 @@ struct VoiceTranslationView: View {
                         if isListening {
                             speechRecognizer.startRecognition { text in
                                 recognizedText = text
-                                
-                                // 🌐 Traduction automatique dès que texte est détecté
                                 isTranslating = true
                                 TranslationService.translate(text, to: targetLang) { result in
                                     DispatchQueue.main.async {
@@ -105,26 +107,97 @@ struct VoiceTranslationView: View {
                             .frame(height: 100)
                             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                             .disabled(true)
+
                         if translatedText.isEmpty {
-                            Text(isTranslating ? "Traduction en cours..." : "La traduction apparaîtra ici...")
+                            Text(isTranslating ? "Traduction en cours..." : "La traduction apparaîtra ici…")
                                 .foregroundColor(.gray)
                                 .padding(12)
                         }
                     }
+
+                    // 📋📤♻️ Boutons
+                    HStack(spacing: 30) {
+                        // Copier
+                        Button {
+                            UIPasteboard.general.string = translatedText
+                            showToast("✅ Copié dans le presse-papiers")
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.title2)
+                                .padding(10)
+                                .background(Color.gray.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+
+                        // Partager
+                        Button {
+                            if !translatedText.isEmpty {
+                                showShareSheet = true
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.title2)
+                                .padding(10)
+                                .background(Color.gray.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+
+                        // Réinitialiser
+                        Button {
+                            recognizedText = ""
+                            translatedText = ""
+                            showToast("🔄 Champs réinitialisés")
+                        } label: {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.title2)
+                                .padding(10)
+                                .background(Color.gray.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
                 }
             }
             .padding()
-            .onAppear {
-                speechRecognizer.requestAuthorization()
-                DeepLService.fetchTargetLanguages { langs in
-                    self.languages = langs
-                }
+        }
+        .onAppear {
+            speechRecognizer.requestAuthorization()
+            DeepLService.fetchTargetLanguages { langs in
+                self.languages = langs
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: [translatedText])
+        }
+        .toast(isPresented: $showToast, message: toastMessage)
         .navigationTitle("Traduction vocale")
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    private func flag(for code: String) -> String {
+        let base: UInt32 = 127397
+        let uppercased = code.prefix(2).uppercased()
+        var scalarView = String.UnicodeScalarView()
+
+        for scalar in uppercased.unicodeScalars {
+            if let flagScalar = UnicodeScalar(base + scalar.value) {
+                scalarView.append(flagScalar)
+            }
+        }
+
+        return String(scalarView)
+    }
+
+    private func showToast(_ message: String) {
+        toastMessage = message
+        showToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            showToast = false
+        }
+    }
 }
+
 
 #Preview {
     VoiceTranslationView()

@@ -21,6 +21,10 @@ struct ImageTranslationView: View {
 
     @State private var targetLang = ""
     @State private var languages: [Language] = []
+    @State private var showShareSheet = false
+
+    @State private var showToast = false
+    @State private var toastMessage = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -28,7 +32,7 @@ struct ImageTranslationView: View {
                 .font(.largeTitle)
                 .bold()
 
-            // 📸 Affichage image
+            // 📸 Image affichée
             ZStack {
                 if let image = selectedImage {
                     Image(uiImage: image)
@@ -39,13 +43,12 @@ struct ImageTranslationView: View {
                 } else {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(Color.gray.opacity(0.1))
-                        .frame(height: 150) // ✅ Hauteur réduite ici
+                        .frame(height: 150)
                         .overlay(Text("Aucune image sélectionnée").foregroundColor(.gray))
                 }
             }
 
-
-            // 🔘 Choix source
+            // 📷 Bouton source image
             Button {
                 showSourceDialog = true
             } label: {
@@ -75,8 +78,7 @@ struct ImageTranslationView: View {
 
             // 🧾 Texte extrait
             VStack(alignment: .leading) {
-                Text("Texte extrait :")
-                    .font(.headline)
+                Text("Texte extrait :").font(.headline)
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: .constant(extractedText))
                         .padding(4)
@@ -91,16 +93,15 @@ struct ImageTranslationView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
             }
 
-            // 🌍 Langue cible + 🔁 Traduire (centrés sur une ligne)
+            // 🌍 Langue + bouton Traduire
             if languages.isEmpty {
-                ProgressView("Chargement des langues...")
+                ProgressView("Chargement des langues…")
             } else {
                 HStack(spacing: 12) {
                     Picker("", selection: $targetLang) {
                         Text("🌐").tag("")
                         ForEach(languages, id: \.language) { lang in
-                            Text("\(flag(for: lang.language)) \(lang.name)")
-                                .tag(lang.language)
+                            Text("\(flag(for: lang.language)) \(lang.name)").tag(lang.language)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
@@ -121,19 +122,17 @@ struct ImageTranslationView: View {
                     }
                     .disabled(extractedText.isEmpty || targetLang.isEmpty)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            // 💬 Traduction
+            // 💬 Traduction affichée
             VStack(alignment: .leading) {
-                Text("Traduction :")
-                    .font(.headline)
+                Text("Traduction :").font(.headline)
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: .constant(translatedText))
                         .padding(4)
                         .disabled(true)
                     if translatedText.isEmpty {
-                        Text("La traduction apparaîtra ici...")
+                        Text("La traduction apparaîtra ici…")
                             .foregroundColor(.gray)
                             .padding(12)
                     }
@@ -141,6 +140,50 @@ struct ImageTranslationView: View {
                 .frame(minHeight: 100)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
             }
+
+            // ➕ Boutons : Copier, Partager, Réinitialiser
+            HStack(spacing: 30) {
+                Button {
+                    if !translatedText.isEmpty {
+                        UIPasteboard.general.string = translatedText
+                        showToast("✅ Copié dans le presse-papiers")
+                    }
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.title2)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Circle())
+                }
+
+                Button {
+                    if !translatedText.isEmpty {
+                        showShareSheet = true
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.title2)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Circle())
+                }
+
+                Button {
+                    selectedImage = nil
+                    extractedText = ""
+                    translatedText = ""
+                    targetLang = ""
+                    showToast("🔄 Champs réinitialisés")
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.title2)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Circle())
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 10)
 
             Spacer()
         }
@@ -153,11 +196,15 @@ struct ImageTranslationView: View {
                     }
                 }
         }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: [translatedText])
+        }
         .onAppear {
             DeepLService.fetchTargetLanguages { langs in
                 self.languages = langs
             }
         }
+        .toast(isPresented: $showToast, message: toastMessage)
     }
 
     private func extractText(from image: UIImage) {
@@ -202,8 +249,15 @@ struct ImageTranslationView: View {
 
         return String(scalarView)
     }
-}
 
+    private func showToast(_ message: String) {
+        toastMessage = message
+        showToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            showToast = false
+        }
+    }
+}
 
 #Preview {
     ImageTranslationView()

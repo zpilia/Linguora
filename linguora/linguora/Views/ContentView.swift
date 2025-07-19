@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var languages: [Language] = []
     @State private var isTranslating = false
     @State private var selectedLangCode: String?
+    @State private var isShareSheetPresented = false
+
+    @State private var showToast = false
+    @State private var toastMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -23,7 +27,7 @@ struct ContentView: View {
                     if languages.isEmpty {
                         ProgressView("Chargement des langues...")
                     } else {
-                        // 🌐 Langues source et cible
+                        // 🌐 Sélection des langues
                         HStack(spacing: 12) {
                             VStack(alignment: .leading) {
                                 Text("Langue source").font(.subheadline)
@@ -61,14 +65,13 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity)
                         }
 
-                        // 📝 Zone de texte à traduire
+                        // 📝 Texte à traduire
                         Text("Texte à traduire").font(.headline)
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: $inputText)
                                 .padding(4)
-                                .background(Color.clear)
                             if inputText.isEmpty {
-                                Text("Entrez votre texte ici...")
+                                Text("Entrez votre texte ici…")
                                     .foregroundColor(.gray)
                                     .padding(12)
                             }
@@ -98,48 +101,68 @@ struct ContentView: View {
                             .cornerRadius(10)
                         }
 
-                        // 📷🎤📄 Boutons image, micro, document
-                        HStack(spacing: 30) {
-                            NavigationLink(destination: ImageTranslationView()) {
-                                Image(systemName: "camera")
-                                    .font(.title2)
-                                    .padding(10)
-                                    .background(Color.gray.opacity(0.2))
-                                    .clipShape(Circle())
-                            }
-                            .accessibilityLabel("Traduire depuis une image")
+                        // 📷🎤📄📋🔁🔗 Boutons fonctionnels
+                        HStack(spacing: 20) {
+                            Group {
+                                NavigationLink(destination: ImageTranslationView()) {
+                                    Image(systemName: "camera")
+                                }
 
-                            NavigationLink(destination: VoiceTranslationView()) {
-                                Image(systemName: "mic.fill")
-                                    .font(.title2)
-                                    .padding(10)
-                                    .background(Color.gray.opacity(0.2))
-                                    .clipShape(Circle())
-                            }
-                            .accessibilityLabel("Traduire avec la voix")
+                                NavigationLink(destination: VoiceTranslationView()) {
+                                    Image(systemName: "mic.fill")
+                                }
 
-                            NavigationLink(destination: DocumentTranslationView()) {
-                                Image(systemName: "doc.text.fill")
-                                    .font(.title2)
-                                    .padding(10)
-                                    .background(Color.gray.opacity(0.2))
-                                    .clipShape(Circle())
+                                NavigationLink(destination: DocumentTranslationView()) {
+                                    Image(systemName: "doc.text.fill")
+                                }
+
+                                Button(action: {
+                                    if !translatedText.isEmpty {
+                                        UIPasteboard.general.string = translatedText
+                                        showToast("✅ Copié dans le presse-papiers")
+                                    }
+                                }) {
+                                    Image(systemName: "doc.on.doc")
+                                }
+                                .disabled(translatedText.isEmpty)
+                                .opacity(translatedText.isEmpty ? 0.3 : 1)
+
+                                Button(action: {
+                                    if !translatedText.isEmpty {
+                                        isShareSheetPresented = true
+                                    }
+                                }) {
+                                    Image(systemName: "square.and.arrow.up")
+                                }
+                                .disabled(translatedText.isEmpty)
+                                .opacity(translatedText.isEmpty ? 0.3 : 1)
+
+                                Button(action: {
+                                    inputText = ""
+                                    translatedText = ""
+                                    sourceLang = ""
+                                    targetLang = ""
+                                    showToast("🔄 Champs réinitialisés")
+                                }) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                }
                             }
-                            .accessibilityLabel("Traduire un document")
+                            .font(.title2)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Circle())
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)
-                        .padding(.bottom, 5)
 
                         // 🧾 Zone de traduction
                         Text("Traduction :").font(.headline)
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: .constant(translatedText))
                                 .padding(4)
-                                .background(Color.clear)
                                 .disabled(true)
                             if translatedText.isEmpty {
-                                Text("La traduction apparaîtra ici...")
+                                Text("La traduction apparaîtra ici…")
                                     .foregroundColor(.gray)
                                     .padding(12)
                             }
@@ -147,7 +170,7 @@ struct ContentView: View {
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
 
-                        // 🌍🌍 Deux boutons sur la même ligne (placé ici)
+                        // 🌍🌍 Liens vers les vues des pays
                         HStack(spacing: 12) {
                             NavigationLink(value: selectedLangCode ?? "") {
                                 Text("Pays cible 🌍")
@@ -179,11 +202,34 @@ struct ContentView: View {
                     self.languages = langs
                 }
             }
-            // 🌐 Redirection par code langue
             .navigationDestination(for: String.self) { langCode in
                 CountryDetailView(langCode: langCode)
             }
+            .sheet(isPresented: $isShareSheetPresented) {
+                ShareSheet(activityItems: [translatedText])
+            }
+            .toast(isPresented: $showToast, message: toastMessage)
         }
+    }
+
+    private func showToast(_ message: String) {
+        toastMessage = message
+        showToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            showToast = false
+        }
+    }
+
+    private func flag(for code: String) -> String {
+        let base: UInt32 = 127397
+        let uppercased = code.prefix(2).uppercased()
+        var scalarView = String.UnicodeScalarView()
+        for scalar in uppercased.unicodeScalars {
+            if let flagScalar = UnicodeScalar(base + scalar.value) {
+                scalarView.append(flagScalar)
+            }
+        }
+        return String(scalarView)
     }
 }
 
