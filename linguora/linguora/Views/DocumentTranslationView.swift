@@ -14,88 +14,109 @@ struct DocumentTranslationView: View {
     @State private var isTranslating = false
     @State private var showShareSheet = false
     @State private var translatedFileURL: URL?
-    
+
     @State private var documentPickerDelegate: DocumentPickerDelegateWrapper?
-    
+
     @State private var targetLang: String? = nil
     @State private var sourceLang: String? = nil
     @State private var languages: [Language] = []
-    
+
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Traduction de document")
-                .font(.title2)
-                .bold()
-            
-            if languages.isEmpty {
-                ProgressView("Chargement des langues...")
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Langue source (optionnelle)").font(.subheadline)
-                    Picker("", selection: $sourceLang) {
-                        Text("🌐 Détection automatique").tag(String?.none)
-                        ForEach(languages, id: \.language) { lang in
-                            Text("\(flag(for: lang.language)) \(lang.name)").tag(Optional(lang.language))
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("Traduction de document")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.primary)
+
+                if languages.isEmpty {
+                    ProgressView("Chargement des langues…")
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Langue source (optionnelle)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Picker("", selection: $sourceLang) {
+                            Text("🌐 Détection automatique").tag(String?.none)
+                            ForEach(languages, id: \.language) { lang in
+                                Text("\(flag(for: lang.language)) \(lang.name)").tag(Optional(lang.language))
+                            }
                         }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    
-                    Text("Langue cible").font(.subheadline)
-                    Picker("", selection: $targetLang) {
-                        Text("🌐 Choisir une langue").tag(String?.none)
-                        ForEach(languages, id: \.language) { lang in
-                            Text("\(flag(for: lang.language)) \(lang.name)").tag(Optional(lang.language))
+                        .pickerStyle(MenuPickerStyle())
+                        .padding()
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(10)
+
+                        Text("Langue cible")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Picker("", selection: $targetLang) {
+                            Text("🌐 Choisir une langue").tag(String?.none)
+                            ForEach(languages, id: \.language) { lang in
+                                Text("\(flag(for: lang.language)) \(lang.name)").tag(Optional(lang.language))
+                            }
                         }
+                        .pickerStyle(MenuPickerStyle())
+                        .padding()
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(10)
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
                 }
-            }
-            
-            Button(action: importDocument) {
-                Label("Importer et traduire un document", systemImage: "arrow.down.doc")
+
+                Button(action: importDocument) {
+                    Label("Importer et traduire un document", systemImage: "arrow.down.doc")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background((targetLang?.isEmpty ?? true) ? Color.gray : Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .disabled(targetLang?.isEmpty ?? true)
+
+                if !selectedFileName.isEmpty {
+                    Text("Fichier sélectionné : **\(selectedFileName)**")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundColor(.primary)
+                }
+
+                if isTranslating {
+                    ProgressView("Traduction en cours…")
+                }
+
+                if !translationStatus.isEmpty {
+                    Text("Statut : \(translationStatus)")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundColor(.primary)
+                }
+
+                if let fileURL = translatedFileURL {
+                    Button("Partager le fichier traduit") {
+                        showShareSheet = true
+                    }
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background((targetLang?.isEmpty ?? true) ? Color.gray : Color.blue)
+                    .background(Color.accentColor)
                     .foregroundColor(.white)
                     .cornerRadius(10)
-            }
-            .disabled(targetLang?.isEmpty ?? true)
-            
-            if !selectedFileName.isEmpty {
-                Text("Fichier sélectionné : **\(selectedFileName)**")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            
-            if isTranslating {
-                ProgressView("Traduction en cours…")
-            }
-            
-            if !translationStatus.isEmpty {
-                Text("Statut : \(translationStatus)")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            
-            if let fileURL = translatedFileURL {
-                Button("Partager le fichier traduit") {
-                    showShareSheet = true
-                }
-                .sheet(isPresented: $showShareSheet) {
-                    ShareSheet(activityItems: [fileURL])
+                    .sheet(isPresented: $showShareSheet) {
+                        ShareSheet(activityItems: [fileURL])
+                    }
                 }
             }
-            
-            Spacer()
+            .padding()
         }
-        .padding()
+        .background(Color(UIColor.systemBackground))
         .navigationTitle("Document")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .imageScale(.large)
+                }
+            }
+        }
         .onAppear {
             DeepLService.fetchTargetLanguages { langs in
                 self.languages = langs.sorted { $0.name < $1.name }
@@ -104,27 +125,27 @@ struct DocumentTranslationView: View {
             }
         }
     }
-    
+
     private func importDocument() {
         guard let targetLang = targetLang, !targetLang.isEmpty else {
             translationStatus = "❗️Veuillez sélectionner une langue cible."
             return
         }
-        
+
         let types: [UTType] = [
             .pdf, .plainText, .rtf, .text,
             UTType(filenameExtension: "docx")!,
             UTType(filenameExtension: "doc")!
         ]
-        
+
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
         picker.allowsMultipleSelection = false
-        
+
         let delegate = DocumentPickerDelegateWrapper { url in
             selectedFileName = url.lastPathComponent
             isTranslating = true
             translationStatus = "📤 Téléversement du document…"
-            
+
             DeepLService.uploadDocument(
                 fileURL: url,
                 targetLang: targetLang,
@@ -135,9 +156,9 @@ struct DocumentTranslationView: View {
                     isTranslating = false
                     return
                 }
-                
+
                 translationStatus = "📬 Document envoyé. Vérification du statut…"
-                
+
                 Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
                     DeepLService.checkDocumentStatus(documentId: documentId, documentKey: documentKey) { status in
                         guard let status = status else {
@@ -146,23 +167,23 @@ struct DocumentTranslationView: View {
                             isTranslating = false
                             return
                         }
-                        
+
                         translationStatus = "🔄 Statut : \(status.capitalized)"
-                        
+
                         if status.lowercased() == "done" {
                             timer.invalidate()
                             translationStatus = "📥 Téléchargement du fichier traduit…"
-                            
+
                             DeepLService.downloadTranslatedDocument(documentId: documentId, documentKey: documentKey) { data in
                                 guard let data = data else {
                                     translationStatus = "❌ Erreur lors du téléchargement."
                                     isTranslating = false
                                     return
                                 }
-                                
+
                                 let tempURL = FileManager.default.temporaryDirectory
                                     .appendingPathComponent("translated_\(selectedFileName)")
-                                
+
                                 do {
                                     try data.write(to: tempURL)
                                     translatedFileURL = tempURL
@@ -170,7 +191,7 @@ struct DocumentTranslationView: View {
                                 } catch {
                                     translationStatus = "❌ Erreur de sauvegarde : \(error.localizedDescription)"
                                 }
-                                
+
                                 isTranslating = false
                             }
                         } else if status.lowercased() == "error" {
@@ -182,10 +203,10 @@ struct DocumentTranslationView: View {
                 }
             }
         }
-        
+
         self.documentPickerDelegate = delegate
         picker.delegate = delegate
-        
+
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = scene.windows.first,
            let rootVC = window.rootViewController {
@@ -193,6 +214,7 @@ struct DocumentTranslationView: View {
         }
     }
 }
+
 
 #Preview {
     NavigationStack {

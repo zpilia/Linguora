@@ -9,12 +9,18 @@ import SwiftUI
 
 @main
 struct linguoraApp: App {
+    @AppStorage("selectedTheme") private var selectedTheme: String = AppTheme.system.rawValue
+
     var body: some Scene {
         WindowGroup {
             NavigationStack {
                 ContentView()
-                    .navigationTitle("Accueil")
             }
+            .preferredColorScheme(resolveColorScheme())
         }
+    }
+
+    private func resolveColorScheme() -> ColorScheme? {
+        AppTheme(rawValue: selectedTheme)?.colorScheme
     }
 }

@@ -27,167 +27,165 @@ struct ImageTranslationView: View {
     @State private var toastMessage = ""
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Traduction par image")
-                .font(.largeTitle)
-                .bold()
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("Traduction par image")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.primary)
 
-            // 📸 Image affichée
-            ZStack {
-                if let image = selectedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 300)
+                ZStack {
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 300)
+                            .cornerRadius(10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(UIColor.secondarySystemBackground))
+                            .frame(height: 150)
+                            .overlay(Text("Aucune image sélectionnée").foregroundColor(.gray))
+                    }
+                }
+
+                Button {
+                    showSourceDialog = true
+                } label: {
+                    Label("Prendre ou choisir une photo", systemImage: "camera")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
                         .cornerRadius(10)
-                } else {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(height: 150)
-                        .overlay(Text("Aucune image sélectionnée").foregroundColor(.gray))
                 }
-            }
-
-            // 📷 Bouton source image
-            Button {
-                showSourceDialog = true
-            } label: {
-                HStack {
-                    Image(systemName: "camera")
-                    Text("Prendre ou choisir une photo")
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-            }
-            .confirmationDialog("Choisir une source", isPresented: $showSourceDialog, titleVisibility: .visible) {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    Button("Appareil photo") {
-                        imagePickerSource = .camera
+                .confirmationDialog("Choisir une source", isPresented: $showSourceDialog) {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button("Appareil photo") {
+                            imagePickerSource = .camera
+                            showImagePicker = true
+                        }
+                    }
+                    Button("Galerie") {
+                        imagePickerSource = .photoLibrary
                         showImagePicker = true
                     }
+                    Button("Annuler", role: .cancel) {}
                 }
-                Button("Galerie") {
-                    imagePickerSource = .photoLibrary
-                    showImagePicker = true
-                }
-                Button("Annuler", role: .cancel) {}
-            }
 
-            // 🧾 Texte extrait
-            VStack(alignment: .leading) {
-                Text("Texte extrait :").font(.headline)
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: .constant(extractedText))
-                        .padding(4)
-                        .disabled(true)
-                    if extractedText.isEmpty {
-                        Text("Le texte détecté apparaîtra ici...")
-                            .foregroundColor(.gray)
-                            .padding(12)
-                    }
-                }
-                .frame(minHeight: 100)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
-            }
-
-            // 🌍 Langue + bouton Traduire
-            if languages.isEmpty {
-                ProgressView("Chargement des langues…")
-            } else {
-                HStack(spacing: 12) {
-                    Picker("", selection: $targetLang) {
-                        Text("🌐").tag("")
-                        ForEach(languages, id: \.language) { lang in
-                            Text("\(flag(for: lang.language)) \(lang.name)").tag(lang.language)
+                VStack(alignment: .leading) {
+                    Text("Texte extrait :").font(.headline).foregroundColor(.primary)
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: .constant(extractedText))
+                            .padding(4)
+                            .disabled(true)
+                        if extractedText.isEmpty {
+                            Text("Le texte détecté apparaîtra ici...")
+                                .foregroundColor(.gray)
+                                .padding(12)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(width: 150)
+                    .frame(minHeight: 100)
+                    .background(Color(UIColor.systemBackground))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
+                }
+
+                if languages.isEmpty {
+                    ProgressView("Chargement des langues…")
+                } else {
+                    HStack(spacing: 12) {
+                        Picker("", selection: $targetLang) {
+                            Text("🌐").tag("")
+                            ForEach(languages, id: \.language) { lang in
+                                Text("\(flag(for: lang.language)) \(lang.name)").tag(lang.language)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 160)
+                        .padding(8)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(8)
+
+                        Button {
+                            translateText()
+                        } label: {
+                            HStack {
+                                if isTranslating { ProgressView() }
+                                Text("Traduire")
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .disabled(extractedText.isEmpty || targetLang.isEmpty)
+                    }
+                }
+
+                VStack(alignment: .leading) {
+                    Text("Traduction :").font(.headline).foregroundColor(.primary)
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: .constant(translatedText))
+                            .padding(4)
+                            .disabled(true)
+                        if translatedText.isEmpty {
+                            Text("La traduction apparaîtra ici…")
+                                .foregroundColor(.gray)
+                                .padding(12)
+                        }
+                    }
+                    .frame(minHeight: 100)
+                    .background(Color(UIColor.systemBackground))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
+                }
+
+                HStack(spacing: 30) {
+                    Button {
+                        if !translatedText.isEmpty {
+                            UIPasteboard.general.string = translatedText
+                            showToast("✅ Copié dans le presse-papiers")
+                        }
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.title2)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Circle())
+                    }
 
                     Button {
-                        translateText()
-                    } label: {
-                        HStack {
-                            if isTranslating { ProgressView() }
-                            Text("Traduire")
+                        if !translatedText.isEmpty {
+                            showShareSheet = true
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.title2)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Circle())
                     }
-                    .disabled(extractedText.isEmpty || targetLang.isEmpty)
+
+                    Button {
+                        selectedImage = nil
+                        extractedText = ""
+                        translatedText = ""
+                        targetLang = ""
+                        showToast("🔄 Champs réinitialisés")
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.title2)
+                            .padding(10)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Circle())
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
             }
-
-            // 💬 Traduction affichée
-            VStack(alignment: .leading) {
-                Text("Traduction :").font(.headline)
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: .constant(translatedText))
-                        .padding(4)
-                        .disabled(true)
-                    if translatedText.isEmpty {
-                        Text("La traduction apparaîtra ici…")
-                            .foregroundColor(.gray)
-                            .padding(12)
-                    }
-                }
-                .frame(minHeight: 100)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
-            }
-
-            // ➕ Boutons : Copier, Partager, Réinitialiser
-            HStack(spacing: 30) {
-                Button {
-                    if !translatedText.isEmpty {
-                        UIPasteboard.general.string = translatedText
-                        showToast("✅ Copié dans le presse-papiers")
-                    }
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.title2)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(Circle())
-                }
-
-                Button {
-                    if !translatedText.isEmpty {
-                        showShareSheet = true
-                    }
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.title2)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(Circle())
-                }
-
-                Button {
-                    selectedImage = nil
-                    extractedText = ""
-                    translatedText = ""
-                    targetLang = ""
-                    showToast("🔄 Champs réinitialisés")
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.title2)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(Circle())
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 10)
-
-            Spacer()
+            .padding()
         }
-        .padding()
+        .background(Color(UIColor.systemBackground))
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(sourceType: imagePickerSource, selectedImage: $selectedImage)
                 .onDisappear {
@@ -198,6 +196,14 @@ struct ImageTranslationView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: [translatedText])
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .imageScale(.large)
+                }
+            }
         }
         .onAppear {
             DeepLService.fetchTargetLanguages { langs in
@@ -258,6 +264,7 @@ struct ImageTranslationView: View {
         }
     }
 }
+
 
 #Preview {
     ImageTranslationView()

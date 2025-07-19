@@ -33,7 +33,7 @@ struct VoiceTranslationView: View {
                     // 🌐 Langue source / cible
                     HStack(spacing: 12) {
                         VStack(alignment: .leading) {
-                            Text("Langue source").font(.subheadline)
+                            Text("Langue source").font(.subheadline).foregroundColor(.primary)
                             Picker("", selection: $sourceLang) {
                                 Text("🌐").tag("")
                                 ForEach(languages, id: \.language) { lang in
@@ -41,8 +41,11 @@ struct VoiceTranslationView: View {
                                 }
                             }
                             .pickerStyle(MenuPickerStyle())
+                            .frame(maxWidth: .infinity)
+                            .padding(2)
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(8)
                         }
-                        .frame(maxWidth: .infinity)
 
                         Button(action: {
                             let temp = sourceLang
@@ -50,13 +53,13 @@ struct VoiceTranslationView: View {
                             targetLang = temp
                         }) {
                             Image(systemName: "arrow.left.arrow.right")
-                                .padding(8)
+                                .padding(10)
                                 .background(Color.gray.opacity(0.15))
                                 .clipShape(Circle())
                         }
 
                         VStack(alignment: .leading) {
-                            Text("Langue cible").font(.subheadline)
+                            Text("Langue cible").font(.subheadline).foregroundColor(.primary)
                             Picker("", selection: $targetLang) {
                                 Text("🌐").tag("")
                                 ForEach(languages, id: \.language) { lang in
@@ -64,14 +67,19 @@ struct VoiceTranslationView: View {
                                 }
                             }
                             .pickerStyle(MenuPickerStyle())
+                            .frame(maxWidth: .infinity)
+                            .padding(2)
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(8)
                         }
-                        .frame(maxWidth: .infinity)
                     }
 
                     // 🎤 Zone texte reconnue
-                    Text("Texte reconnu").font(.headline)
+                    Text("Texte reconnu").font(.headline).foregroundColor(.primary)
                     TextEditor(text: $recognizedText)
                         .frame(height: 100)
+                        .padding(4)
+                        .background(Color(UIColor.systemBackground))
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                         .disabled(true)
 
@@ -101,10 +109,12 @@ struct VoiceTranslationView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
 
                     // 🧾 Texte traduit
-                    Text("Traduction").font(.headline)
+                    Text("Traduction").font(.headline).foregroundColor(.primary)
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: .constant(translatedText))
                             .frame(height: 100)
+                            .padding(4)
+                            .background(Color(UIColor.systemBackground))
                             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                             .disabled(true)
 
@@ -115,12 +125,13 @@ struct VoiceTranslationView: View {
                         }
                     }
 
-                    // 📋📤♻️ Boutons
+                    // 📋📤♻️ Boutons actions
                     HStack(spacing: 30) {
-                        // Copier
                         Button {
-                            UIPasteboard.general.string = translatedText
-                            showToast("✅ Copié dans le presse-papiers")
+                            if !translatedText.isEmpty {
+                                UIPasteboard.general.string = translatedText
+                                showToast("✅ Copié dans le presse-papiers")
+                            }
                         } label: {
                             Image(systemName: "doc.on.doc")
                                 .font(.title2)
@@ -129,7 +140,6 @@ struct VoiceTranslationView: View {
                                 .clipShape(Circle())
                         }
 
-                        // Partager
                         Button {
                             if !translatedText.isEmpty {
                                 showShareSheet = true
@@ -142,7 +152,6 @@ struct VoiceTranslationView: View {
                                 .clipShape(Circle())
                         }
 
-                        // Réinitialiser
                         Button {
                             recognizedText = ""
                             translatedText = ""
@@ -161,6 +170,7 @@ struct VoiceTranslationView: View {
             }
             .padding()
         }
+        .background(Color(UIColor.systemBackground))
         .onAppear {
             speechRecognizer.requestAuthorization()
             DeepLService.fetchTargetLanguages { langs in
@@ -173,19 +183,25 @@ struct VoiceTranslationView: View {
         .toast(isPresented: $showToast, message: toastMessage)
         .navigationTitle("Traduction vocale")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .imageScale(.large)
+                }
+            }
+        }
     }
 
     private func flag(for code: String) -> String {
         let base: UInt32 = 127397
         let uppercased = code.prefix(2).uppercased()
         var scalarView = String.UnicodeScalarView()
-
         for scalar in uppercased.unicodeScalars {
             if let flagScalar = UnicodeScalar(base + scalar.value) {
                 scalarView.append(flagScalar)
             }
         }
-
         return String(scalarView)
     }
 
@@ -197,6 +213,7 @@ struct VoiceTranslationView: View {
         }
     }
 }
+
 
 
 #Preview {

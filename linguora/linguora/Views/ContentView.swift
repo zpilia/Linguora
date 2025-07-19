@@ -25,7 +25,7 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if languages.isEmpty {
-                        ProgressView("Chargement des langues...")
+                        ProgressView("Chargement des langues…")
                     } else {
                         // 🌐 Sélection des langues
                         HStack(spacing: 12) {
@@ -70,6 +70,7 @@ struct ContentView: View {
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: $inputText)
                                 .padding(4)
+                                .background(Color(UIColor.systemBackground))
                             if inputText.isEmpty {
                                 Text("Entrez votre texte ici…")
                                     .foregroundColor(.gray)
@@ -96,7 +97,7 @@ struct ContentView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
+                            .background(Color.accentColor)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                         }
@@ -151,6 +152,7 @@ struct ContentView: View {
                             .padding(10)
                             .background(Color.gray.opacity(0.2))
                             .clipShape(Circle())
+                            .foregroundColor(.primary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)
@@ -160,6 +162,7 @@ struct ContentView: View {
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: .constant(translatedText))
                                 .padding(4)
+                                .background(Color(UIColor.systemBackground))
                                 .disabled(true)
                             if translatedText.isEmpty {
                                 Text("La traduction apparaîtra ici…")
@@ -170,7 +173,7 @@ struct ContentView: View {
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
 
-                        // 🌍🌍 Liens vers les vues des pays
+                        // 🌍 Liens vers les vues des pays
                         HStack(spacing: 12) {
                             NavigationLink(value: selectedLangCode ?? "") {
                                 Text("Pays cible 🌍")
@@ -195,8 +198,17 @@ struct ContentView: View {
                 }
                 .padding()
             }
+            .background(Color(UIColor.systemBackground))
             .navigationTitle("Linguora")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
+                            .imageScale(.large)
+                    }
+                }
+            }
             .onAppear {
                 DeepLService.fetchTargetLanguages { langs in
                     self.languages = langs
@@ -232,6 +244,7 @@ struct ContentView: View {
         return String(scalarView)
     }
 }
+
 
 #Preview {
     ContentView()

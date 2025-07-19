@@ -41,11 +41,11 @@ struct CountryDetailView: View {
         ScrollView {
             if let country = country {
                 VStack(spacing: 20) {
-                    
+
                     // 🗺️ Carte de la capitale
                     if let latlng = country.capitalInfo?.latlng, latlng.count == 2 {
                         let coordinate = CLLocationCoordinate2D(latitude: latlng[0], longitude: latlng[1])
-                        
+
                         Map(initialPosition: .region(
                             MKCoordinateRegion(
                                 center: coordinate,
@@ -65,12 +65,13 @@ struct CountryDetailView: View {
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
-                    
+
                     // 🇫🇷 Nom & Drapeau
                     VStack(spacing: 12) {
                         Text(country.name.common)
                             .font(.largeTitle)
                             .bold()
+                            .foregroundColor(.primary)
 
                         if let flagUrl = country.flags?.png, let url = URL(string: flagUrl) {
                             AsyncImage(url: url) { image in
@@ -92,7 +93,7 @@ struct CountryDetailView: View {
                         InfoCard(icon: "globe", label: "Langues officielles", value: languageList(from: country.languages))
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(UIColor.secondarySystemBackground))
                     .cornerRadius(16)
                 }
                 .padding()
@@ -101,6 +102,7 @@ struct CountryDetailView: View {
                     .padding()
             }
         }
+        .background(Color(UIColor.systemBackground))
         .onAppear {
             CountryService.fetchByCode(langCode) { result in
                 self.country = result.first
@@ -108,17 +110,24 @@ struct CountryDetailView: View {
         }
         .navigationTitle("Détails du pays")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .imageScale(.large)
+                }
+            }
+        }
     }
 
-    // Formattage des monnaies
     private func currencyList(from currencies: [String: Currency]?) -> String {
         guard let currencies = currencies else { return "-" }
         return currencies.map { "\($0.value.name ?? "-") (\($0.key))" }.joined(separator: ", ")
     }
 
-    // Formattage des langues
     private func languageList(from languages: [String: String]?) -> String {
         guard let languages = languages else { return "-" }
         return languages.map { $0.value }.joined(separator: ", ")
     }
 }
+

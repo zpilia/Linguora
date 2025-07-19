@@ -24,7 +24,7 @@ struct CurrentLocationCountryView: View {
 
                     if let location = locationManager.currentLocation {
                         Map(initialPosition: .region(region)) {
-                            UserAnnotation() // Point bleu natif
+                            UserAnnotation() // ✅ Point bleu natif
 
                             if let city = locationManager.currentCity {
                                 Annotation("city-label", coordinate: location.coordinate) {
@@ -50,6 +50,7 @@ struct CurrentLocationCountryView: View {
                         Text(country.name.common)
                             .font(.largeTitle)
                             .bold()
+                            .foregroundColor(.primary)
 
                         if let flagUrl = country.flags?.png, let url = URL(string: flagUrl) {
                             AsyncImage(url: url) { image in
@@ -71,7 +72,7 @@ struct CurrentLocationCountryView: View {
                         InfoCard(icon: "globe", label: "Langues officielles", value: languageList(from: country.languages))
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(UIColor.secondarySystemBackground))
                     .cornerRadius(16)
                 }
                 .padding()
@@ -80,8 +81,17 @@ struct CurrentLocationCountryView: View {
                     .padding()
             }
         }
+        .background(Color(UIColor.systemBackground))
         .navigationTitle("Mon pays")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .imageScale(.large)
+                }
+            }
+        }
         .onAppear {
             Task {
                 if let isoCode = await locationManager.getCurrentCountryCode() {
