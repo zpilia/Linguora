@@ -22,7 +22,7 @@ struct ContentView: View {
                     if languages.isEmpty {
                         ProgressView("Chargement des langues...")
                     } else {
-                        // 🌐 Langues source et cible sur une ligne
+                        // 🌐 Langues source et cible
                         HStack(spacing: 12) {
                             VStack(alignment: .leading) {
                                 Text("Langue source").font(.subheadline)
@@ -98,9 +98,8 @@ struct ContentView: View {
                             .cornerRadius(10)
                         }
 
-                        // 📷 Bouton image
-                        HStack {
-                            Spacer()
+                        // 📷🎤 Boutons image et micro
+                        HStack(spacing: 30) {
                             NavigationLink(destination: ImageTranslationView()) {
                                 Image(systemName: "camera")
                                     .font(.title2)
@@ -109,8 +108,20 @@ struct ContentView: View {
                                     .clipShape(Circle())
                             }
                             .accessibilityLabel("Traduire depuis une image")
-                            Spacer()
+
+                            NavigationLink(destination: VoiceTranslationView()) {
+                                Image(systemName: "mic.fill")
+                                    .font(.title2)
+                                    .padding(10)
+                                    .background(Color.gray.opacity(0.2))
+                                    .clipShape(Circle())
+                            }
+                            .accessibilityLabel("Traduire avec la voix")
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 10)
+                        .padding(.bottom, 5)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
                         // 🧾 Zone de traduction
                         Text("Traduction :").font(.headline)
@@ -141,6 +152,7 @@ struct ContentView: View {
         }
     }
 }
+
 
 
 #Preview {

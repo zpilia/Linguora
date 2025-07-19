@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Cette app a besoin d&apos;accéder à la reconnaissance vocale pour convertir votre voix en texte.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cette app a besoin d&apos;accéder au micro pour la reconnaissance vocale.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nous avons besoin d&apos;accéder à vos photos pour sélectionner une image à traduire.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Nous avons besoin d&apos;accéder à la caméra pour prendre une photo à traduire.</string>
+</dict>
+</plist>

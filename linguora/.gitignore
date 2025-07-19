@@ -24,3 +24,7 @@ xcuserdata/
 
 ### App Secrets ###
 linguora/Secrets.plist
+
+# macOS system file
+.DS_Store
+linguora/.DS_Store
