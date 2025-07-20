@@ -8,15 +8,17 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var inputText = ""
-    @State private var translatedText = ""
-    @State private var sourceLang = ""
-    @State private var targetLang = ""
-    @State private var languages: [Language] = []
-    @State private var isTranslating = false
-    @State private var selectedLangCode: String?
-    @State private var isShareSheetPresented = false
+    // États liés à la traduction
+    @State private var inputText = ""                 // Texte à traduire (champ utilisateur)
+    @State private var translatedText = ""            // Résultat de la traduction
+    @State private var sourceLang = ""                // Code langue source sélectionnée
+    @State private var targetLang = ""                // Code langue cible sélectionnée
+    @State private var languages: [Language] = []     // Liste des langues disponibles
+    @State private var isTranslating = false          // Indicateur de chargement pendant traduction
+    @State private var selectedLangCode: String?      // Langue utilisée pour consulter un pays cible
+    @State private var isShareSheetPresented = false  // Contrôle de l'affichage de la feuille de partage
 
+    // Gestion des toasts (notifications temporaires)
     @State private var showToast = false
     @State private var toastMessage = ""
 
@@ -24,11 +26,15 @@ struct ContentView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    
+                    // Affichage du chargement si les langues ne sont pas encore prêtes
                     if languages.isEmpty {
                         ProgressView("Chargement des langues…")
                     } else {
-                        // 🌐 Sélection des langues
+                        
+                        // Sélection des langues source et cible
                         HStack(spacing: 12) {
+                            // Picker langue source
                             VStack(alignment: .leading) {
                                 Text("Langue source").font(.subheadline)
                                 Picker("", selection: $sourceLang) {
@@ -41,6 +47,7 @@ struct ContentView: View {
                             }
                             .frame(maxWidth: .infinity)
 
+                            // Bouton d'inversion des langues
                             Button(action: {
                                 let temp = sourceLang
                                 sourceLang = targetLang
@@ -52,6 +59,7 @@ struct ContentView: View {
                                     .clipShape(Circle())
                             }
 
+                            // Picker langue cible
                             VStack(alignment: .leading) {
                                 Text("Langue cible").font(.subheadline)
                                 Picker("", selection: $targetLang) {
@@ -65,7 +73,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity)
                         }
 
-                        // 📝 Texte à traduire
+                        // Zone de saisie du texte à traduire
                         Text("Texte à traduire").font(.headline)
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: $inputText)
@@ -80,7 +88,7 @@ struct ContentView: View {
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
 
-                        // 🔘 Bouton Traduire
+                        // Bouton pour lancer la traduction
                         Button(action: {
                             isTranslating = true
                             TranslationService.translate(inputText, to: targetLang) { result in
@@ -102,21 +110,25 @@ struct ContentView: View {
                             .cornerRadius(10)
                         }
 
-                        // 📷🎤📄📋🔁🔗 Boutons fonctionnels
+                        // Boutons fonctionnels
                         HStack(spacing: 20) {
                             Group {
+                                // Navigation vers la traduction par image
                                 NavigationLink(destination: ImageTranslationView()) {
                                     Image(systemName: "camera")
                                 }
 
+                                // Navigation vers la traduction vocale
                                 NavigationLink(destination: VoiceTranslationView()) {
                                     Image(systemName: "mic.fill")
                                 }
 
+                                // Navigation vers la traduction de document
                                 NavigationLink(destination: DocumentTranslationView()) {
                                     Image(systemName: "doc.text.fill")
                                 }
 
+                                // Copier le texte traduit
                                 Button(action: {
                                     if !translatedText.isEmpty {
                                         UIPasteboard.general.string = translatedText
@@ -128,6 +140,7 @@ struct ContentView: View {
                                 .disabled(translatedText.isEmpty)
                                 .opacity(translatedText.isEmpty ? 0.3 : 1)
 
+                                // Partager le texte traduit
                                 Button(action: {
                                     if !translatedText.isEmpty {
                                         isShareSheetPresented = true
@@ -138,6 +151,7 @@ struct ContentView: View {
                                 .disabled(translatedText.isEmpty)
                                 .opacity(translatedText.isEmpty ? 0.3 : 1)
 
+                                // Réinitialiser tous les champs
                                 Button(action: {
                                     inputText = ""
                                     translatedText = ""
@@ -157,7 +171,7 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)
 
-                        // 🧾 Zone de traduction
+                        // Zone d'affichage de la traduction
                         Text("Traduction :").font(.headline)
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: .constant(translatedText))
@@ -173,8 +187,9 @@ struct ContentView: View {
                         .frame(minHeight: 120)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
 
-                        // 🌍 Liens vers les vues des pays
+                        // Navigation vers les informations des pays
                         HStack(spacing: 12) {
+                            // Pays cible en fonction de la langue cible traduite
                             NavigationLink(value: selectedLangCode ?? "") {
                                 Text("Pays cible 🌍")
                                     .frame(maxWidth: .infinity)
@@ -185,6 +200,7 @@ struct ContentView: View {
                             }
                             .disabled(translatedText.isEmpty)
 
+                            // Pays actuel basé sur la géolocalisation
                             NavigationLink(destination: CurrentLocationCountryView()) {
                                 Text("Pays actuel 📍")
                                     .frame(maxWidth: .infinity)
@@ -201,6 +217,8 @@ struct ContentView: View {
             .background(Color(UIColor.systemBackground))
             .navigationTitle("Linguora")
             .navigationBarTitleDisplayMode(.inline)
+
+            // Accès aux paramètres
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: SettingsView()) {
@@ -209,21 +227,30 @@ struct ContentView: View {
                     }
                 }
             }
+
+            // Chargement des langues DeepL
             .onAppear {
                 DeepLService.fetchTargetLanguages { langs in
                     self.languages = langs
                 }
             }
+
+            // Navigation dynamique vers la vue pays en fonction du code langue
             .navigationDestination(for: String.self) { langCode in
                 CountryDetailView(langCode: langCode)
             }
+
+            // Feuille de partage iOS
             .sheet(isPresented: $isShareSheetPresented) {
                 ShareSheet(activityItems: [translatedText])
             }
+
+            // Toast de feedback
             .toast(isPresented: $showToast, message: toastMessage)
         }
     }
 
+    // Affichage d’un toast temporaire
     private func showToast(_ message: String) {
         toastMessage = message
         showToast = true
@@ -232,6 +259,7 @@ struct ContentView: View {
         }
     }
 
+    // Génère le drapeau emoji d’un code langue
     private func flag(for code: String) -> String {
         let base: UInt32 = 127397
         let uppercased = code.prefix(2).uppercased()
@@ -244,7 +272,6 @@ struct ContentView: View {
         return String(scalarView)
     }
 }
-
 
 #Preview {
     ContentView()

@@ -4,9 +4,10 @@
 //
 //  Created by Zoé Pilia on 19/07/2025.
 //
+
 import Foundation
 
-// MARK: - Modèles
+// MARK: - Modèles de données renvoyés par l’API REST COUNTRIES
 
 struct Country: Decodable {
     let name: CountryName
@@ -16,15 +17,15 @@ struct Country: Decodable {
     let languages: [String: String]?
     let currencies: [String: Currency]?
     let flags: Flag?
-    let cca2: String?
-    let cca3: String?
-    let cioc: String?
+    let cca2: String?       // Code pays 2 lettres
+    let cca3: String?       // Code pays 3 lettres
+    let cioc: String?       // Code CIO
     let capitalInfo: CapitalInfo?
 }
 
 struct CountryName: Decodable {
-    let common: String
-    let official: String
+    let common: String      // Nom courant
+    let official: String    // Nom officiel
 }
 
 struct Currency: Decodable {
@@ -41,11 +42,12 @@ struct CapitalInfo: Decodable {
     let latlng: [Double]?
 }
 
-// MARK: - Service
+// MARK: - Service pour consommer l’API REST COUNTRIES
 
 class CountryService {
     private static let baseURL = "https://restcountries.com/v3.1"
-    
+
+    /// Requête générique vers l’API
     private static func fetchCountries(from endpoint: String, fields: [String] = [], completion: @escaping ([Country]) -> Void) {
         var urlString = "\(baseURL)/\(endpoint)"
         if !fields.isEmpty {
@@ -65,6 +67,7 @@ class CountryService {
                 completion([])
                 return
             }
+
             guard let data = data else {
                 print("❌ Pas de données")
                 completion([])
@@ -81,7 +84,7 @@ class CountryService {
         }.resume()
     }
 
-    // MARK: - Requêtes principales
+    // MARK: - Fonctions publiques pour différents types de recherches
     static func fetchAll(fields: [String] = [], completion: @escaping ([Country]) -> Void) {
         fetchCountries(from: "all", fields: fields, completion: completion)
     }
@@ -128,7 +131,7 @@ class CountryService {
         fetchCountries(from: "translation/\(translation)", fields: fields, completion: completion)
     }
 
-    // MARK: - Détection automatique via code langue
+    // MARK: - Détection automatique à partir du code langue (ex: "fr")
     static func fetchFromLanguageCode(_ langCode: String, completion: @escaping (Country?) -> Void) {
         fetchByLanguage(langCode) { countries in
             if countries.isEmpty {

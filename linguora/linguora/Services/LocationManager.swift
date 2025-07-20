@@ -9,32 +9,33 @@ import Foundation
 import CoreLocation
 import Combine
 
+/// Gère la localisation, le pays (ISO) et la ville
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    
-    @Published var isoCountryCode: String?
-    @Published var locationError: String?
-    @Published var currentLocation: CLLocation?
-    @Published var currentCity: String?
-    
-    private var continuation: CheckedContinuation<String?, Never>?
-    
+    private let manager = CLLocationManager() // CLLocationManager natif
+
+    @Published var isoCountryCode: String?        // Code pays (ex: "FR")
+    @Published var locationError: String?         // Erreur de localisation
+    @Published var currentLocation: CLLocation?   // Localisation brute
+    @Published var currentCity: String?           // Ville actuelle
+
+    private var continuation: CheckedContinuation<String?, Never>? // Pour await/async
+
     override init() {
         super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.delegate = self                           // Réception des updates
+        manager.desiredAccuracy = kCLLocationAccuracyBest // Précision max
     }
-    
-    /// Appelle cette fonction depuis `.onAppear` dans une `Task {}` pour obtenir le code pays
+
+    /// Appelée depuis `.onAppear { Task { ... } }` pour obtenir le code pays
     func getCurrentCountryCode() async -> String? {
-        manager.requestWhenInUseAuthorization()
-        manager.requestLocation()
-        
+        manager.requestWhenInUseAuthorization() // Autorisation utilisateur
+        manager.requestLocation()               // Lancer récupération
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
         }
     }
 
+    /// Résultat de localisation
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else {
             locationError = "Impossible d'obtenir la localisation."
@@ -43,7 +44,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
 
-        // ✅ Stocker la localisation
         DispatchQueue.main.async {
             self.currentLocation = location
         }
@@ -64,7 +64,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 return
             }
 
-            // ✅ Extraire le code pays
             if let isoCode = placemark.isoCountryCode {
                 DispatchQueue.main.async {
                     self.isoCountryCode = isoCode
@@ -75,7 +74,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.continuation?.resume(returning: nil)
             }
 
-            // ✅ Extraire la ville (localité)
             if let city = placemark.locality {
                 DispatchQueue.main.async {
                     self.currentCity = city
@@ -86,6 +84,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Gestion des erreurs de localisation
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         locationError = "Erreur de localisation : \(error.localizedDescription)"
         continuation?.resume(returning: nil)

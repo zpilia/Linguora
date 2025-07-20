@@ -7,11 +7,14 @@
 
 import SwiftUI
 
+// Enumération des thèmes disponibles dans l'app
 enum AppTheme: String, CaseIterable, Identifiable {
     case system, light, dark
 
+    // Identifiant unique pour chaque case (utilisé par SwiftUI)
     var id: String { rawValue }
 
+    // Nom lisible du thème affiché dans le Picker
     var displayName: String {
         switch self {
         case .system: return "Système"
@@ -20,29 +23,33 @@ enum AppTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    // Association du thème avec ColorScheme de SwiftUI
     var colorScheme: ColorScheme? {
         switch self {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
+        case .system: return nil         // Utilise le mode iOS par défaut
+        case .light: return .light       // Force le mode clair
+        case .dark: return .dark         // Force le mode sombre
         }
     }
 }
 
 struct SettingsView: View {
+    // Sauvegarde du thème sélectionné dans UserDefaults avec AppStorage
     @AppStorage("selectedTheme") private var selectedTheme: String = AppTheme.system.rawValue
 
     var body: some View {
         Form {
+            // Section permettant de choisir le thème (apparence)
             Section(header: Text("Apparence")) {
                 Picker("Thème", selection: $selectedTheme) {
                     ForEach(AppTheme.allCases) { theme in
                         Text(theme.displayName).tag(theme.rawValue)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
+                .pickerStyle(SegmentedPickerStyle()) // Affichage horizontal stylé
             }
 
+            // Section affichant la version actuelle de l’app
             Section {
                 HStack {
                     Text("Version")
@@ -52,11 +59,10 @@ struct SettingsView: View {
                 }
             }
         }
-        .navigationTitle("Paramètres")
-        .background(Color(UIColor.systemBackground))
+        .navigationTitle("Paramètres") // Titre dans la barre de navigation
+        .background(Color(UIColor.systemBackground)) // Respecte le thème système
     }
 }
-
 
 #Preview {
     SettingsView()

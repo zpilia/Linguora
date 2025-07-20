@@ -10,30 +10,36 @@ import Vision
 import PhotosUI
 
 struct ImageTranslationView: View {
+    // Gère l'affichage du sélecteur d'image et la source choisie (appareil ou galerie)
     @State private var showImagePicker = false
     @State private var showSourceDialog = false
     @State private var selectedImage: UIImage?
     @State private var imagePickerSource: UIImagePickerController.SourceType = .photoLibrary
 
+    // Texte détecté et texte traduit
     @State private var extractedText = ""
     @State private var translatedText = ""
     @State private var isTranslating = false
 
+    // Langue cible + liste des langues
     @State private var targetLang = ""
     @State private var languages: [Language] = []
     @State private var showShareSheet = false
 
+    // Toast pour retour utilisateur
     @State private var showToast = false
     @State private var toastMessage = ""
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Titre de la page
                 Text("Traduction par image")
                     .font(.title2)
                     .bold()
                     .foregroundColor(.primary)
 
+                // Zone d'affichage ou de sélection d'image
                 ZStack {
                     if let image = selectedImage {
                         Image(uiImage: image)
@@ -49,6 +55,7 @@ struct ImageTranslationView: View {
                     }
                 }
 
+                // Bouton pour choisir l’image (appareil photo ou galerie)
                 Button {
                     showSourceDialog = true
                 } label: {
@@ -73,6 +80,7 @@ struct ImageTranslationView: View {
                     Button("Annuler", role: .cancel) {}
                 }
 
+                // Zone affichant le texte extrait
                 VStack(alignment: .leading) {
                     Text("Texte extrait :").font(.headline).foregroundColor(.primary)
                     ZStack(alignment: .topLeading) {
@@ -90,6 +98,7 @@ struct ImageTranslationView: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                 }
 
+                // Sélection de la langue cible + bouton Traduire
                 if languages.isEmpty {
                     ProgressView("Chargement des langues…")
                 } else {
@@ -123,6 +132,7 @@ struct ImageTranslationView: View {
                     }
                 }
 
+                // Zone de texte traduit
                 VStack(alignment: .leading) {
                     Text("Traduction :").font(.headline).foregroundColor(.primary)
                     ZStack(alignment: .topLeading) {
@@ -140,7 +150,9 @@ struct ImageTranslationView: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                 }
 
+                // Boutons d'action : copier, partager, réinitialiser
                 HStack(spacing: 30) {
+                    // Copier dans le presse-papier
                     Button {
                         if !translatedText.isEmpty {
                             UIPasteboard.general.string = translatedText
@@ -154,6 +166,7 @@ struct ImageTranslationView: View {
                             .clipShape(Circle())
                     }
 
+                    // Partager
                     Button {
                         if !translatedText.isEmpty {
                             showShareSheet = true
@@ -166,6 +179,7 @@ struct ImageTranslationView: View {
                             .clipShape(Circle())
                     }
 
+                    // Réinitialiser
                     Button {
                         selectedImage = nil
                         extractedText = ""
@@ -186,6 +200,8 @@ struct ImageTranslationView: View {
             .padding()
         }
         .background(Color(UIColor.systemBackground))
+        
+        // Affiche le sélecteur d’image
         .sheet(isPresented: $showImagePicker) {
             ImagePicker(sourceType: imagePickerSource, selectedImage: $selectedImage)
                 .onDisappear {
@@ -194,9 +210,13 @@ struct ImageTranslationView: View {
                     }
                 }
         }
+
+        // Feuille de partage avec le texte traduit
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: [translatedText])
         }
+
+        // Bouton pour accéder aux paramètres
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: SettingsView()) {
@@ -205,14 +225,19 @@ struct ImageTranslationView: View {
                 }
             }
         }
+
+        // Chargement des langues à l’ouverture
         .onAppear {
             DeepLService.fetchTargetLanguages { langs in
                 self.languages = langs
             }
         }
+
+        // Affichage d’un toast (message temporaire)
         .toast(isPresented: $showToast, message: toastMessage)
     }
 
+    // Extraction OCR avec Vision
     private func extractText(from image: UIImage) {
         guard let cgImage = image.cgImage else { return }
 
@@ -232,6 +257,7 @@ struct ImageTranslationView: View {
         try? handler.perform([request])
     }
 
+    // Traduction du texte extrait via DeepL
     private func translateText() {
         isTranslating = true
         DeepLService.translate(text: extractedText, to: targetLang) { result in
@@ -242,6 +268,7 @@ struct ImageTranslationView: View {
         }
     }
 
+    // Génère un drapeau depuis un code de langue
     private func flag(for code: String) -> String {
         let base: UInt32 = 127397
         let uppercased = code.prefix(2).uppercased()
@@ -256,6 +283,7 @@ struct ImageTranslationView: View {
         return String(scalarView)
     }
 
+    // Affiche un toast avec un message personnalisé
     private func showToast(_ message: String) {
         toastMessage = message
         showToast = true
@@ -264,7 +292,6 @@ struct ImageTranslationView: View {
         }
     }
 }
-
 
 #Preview {
     ImageTranslationView()

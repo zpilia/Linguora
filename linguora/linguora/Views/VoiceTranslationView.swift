@@ -30,7 +30,7 @@ struct VoiceTranslationView: View {
                 if languages.isEmpty {
                     ProgressView("Chargement des langues...")
                 } else {
-                    // 🌐 Langue source / cible
+                    // Langue source / cible
                     HStack(spacing: 12) {
                         VStack(alignment: .leading) {
                             Text("Langue source").font(.subheadline).foregroundColor(.primary)
@@ -74,7 +74,7 @@ struct VoiceTranslationView: View {
                         }
                     }
 
-                    // 🎤 Zone texte reconnue
+                    // Zone texte reconnue
                     Text("Texte reconnu").font(.headline).foregroundColor(.primary)
                     TextEditor(text: $recognizedText)
                         .frame(height: 100)
@@ -83,7 +83,7 @@ struct VoiceTranslationView: View {
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
                         .disabled(true)
 
-                    // 🔘 Bouton micro
+                    // Bouton micro
                     Button(action: {
                         isListening.toggle()
                         if isListening {
@@ -108,7 +108,7 @@ struct VoiceTranslationView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
 
-                    // 🧾 Texte traduit
+                    // Texte traduit
                     Text("Traduction").font(.headline).foregroundColor(.primary)
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: .constant(translatedText))
@@ -125,7 +125,7 @@ struct VoiceTranslationView: View {
                         }
                     }
 
-                    // 📋📤♻️ Boutons actions
+                    // Boutons actions
                     HStack(spacing: 30) {
                         Button {
                             if !translatedText.isEmpty {
@@ -193,18 +193,22 @@ struct VoiceTranslationView: View {
         }
     }
 
+    // Génère un drapeau depuis un code de langue
     private func flag(for code: String) -> String {
         let base: UInt32 = 127397
         let uppercased = code.prefix(2).uppercased()
         var scalarView = String.UnicodeScalarView()
+
         for scalar in uppercased.unicodeScalars {
             if let flagScalar = UnicodeScalar(base + scalar.value) {
                 scalarView.append(flagScalar)
             }
         }
+
         return String(scalarView)
     }
 
+    // Affiche un toast avec un message personnalisé
     private func showToast(_ message: String) {
         toastMessage = message
         showToast = true
@@ -213,8 +217,6 @@ struct VoiceTranslationView: View {
         }
     }
 }
-
-
 
 #Preview {
     VoiceTranslationView()

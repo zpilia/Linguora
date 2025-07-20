@@ -1,15 +1,27 @@
+//
+//  ContentView.swift
+//  linguora
+//
+//  Created by Zoé Pilia on 17/07/2025.
+//
+
 import Foundation
 
+/// Représente une langue disponible
 struct Language: Decodable {
-    let language: String
-    let name: String
+    let language: String   // Code langue (ex: "FR")
+    let name: String       // Nom lisible (ex: "French")
 }
 
+/// Service pour gérer les langues, traductions et documents.
 enum DeepLService {
     static let apiKey = Secrets.deeplAPIKey
     static let baseURL = "https://api-free.deepl.com/v2"
 
     // MARK: - Langues disponibles
+
+    /// Récupère la liste des langues cibles supportées.
+    /// - Parameter completion: Callback avec tableau de `Language`.
     static func fetchTargetLanguages(completion: @escaping ([Language]) -> Void) {
         guard let url = URL(string: "\(baseURL)/languages?type=target") else {
             print("❌ URL invalide")
@@ -40,6 +52,11 @@ enum DeepLService {
     }
 
     // MARK: - Traduction texte
+    /// Traduit une chaîne de texte vers une langue cible.
+    /// - Parameters:
+    ///   - text: Texte à traduire.
+    ///   - targetLang: Code langue cible (ex: "FR").
+    ///   - completion: Callback avec le texte traduit ou `nil`.
     static func translate(text: String, to targetLang: String, completion: @escaping (String?) -> Void) {
         guard let url = URL(string: "\(baseURL)/translate") else {
             print("❌ URL invalide")
@@ -78,6 +95,13 @@ enum DeepLService {
     }
 
     // MARK: - Upload document
+    /// Envoie un document à traduire vers DeepL.
+    /// - Parameters:
+    ///   - fileURL: URL locale du fichier.
+    ///   - targetLang: Langue cible (optionnelle).
+    ///   - sourceLang: Langue source (optionnelle).
+    ///   - formality: Niveau de formalité ("default", "less", "more").
+    ///   - completion: Retourne l'ID et la clé du document.
     static func uploadDocument(
         fileURL: URL,
         targetLang: String? = nil,
@@ -102,7 +126,7 @@ enum DeepLService {
             data.append("\(value)\r\n".data(using: .utf8)!)
         }
 
-        // ✅ Champs principaux (uniquement si renseignés)
+        // Champs principaux (uniquement si renseignés)
         if let targetLang = targetLang, !targetLang.isEmpty {
             appendFormField("target_lang", value: targetLang)
         }
@@ -113,17 +137,17 @@ enum DeepLService {
             appendFormField("source_lang", value: sourceLang)
         }
 
-        // ✅ Nom du fichier
+        // Nom du fichier
         appendFormField("filename", value: fileURL.lastPathComponent)
 
-        // ✅ Format de sortie si reconnu
+        // Format de sortie si reconnu
         let ext = fileURL.pathExtension.lowercased()
         let knownFormats = ["pdf", "docx", "pptx", "html", "txt"]
         if knownFormats.contains(ext) {
             appendFormField("output_format", value: ext)
         }
 
-        // ✅ Partie fichier
+        // Partie fichier
         if let fileData = try? Data(contentsOf: fileURL) {
             let filename = fileURL.lastPathComponent
             let mimeType = mimeTypeForExtension(ext)
@@ -138,7 +162,7 @@ enum DeepLService {
         data.append("--\(boundary)--\r\n".data(using: .utf8)!)
         request.httpBody = data
 
-        // ✅ Lancer la requête
+        // Lancer la requête
         URLSession.shared.dataTask(with: request) { responseData, _, error in
             if let error = error {
                 print("❌ Erreur upload :", error)
@@ -166,6 +190,10 @@ enum DeepLService {
 
 
     // MARK: - Déterminer le type MIME selon l’extension
+    
+    /// Déduit le type MIME à partir d'une extension.
+    /// - Parameter ext: Extension de fichier (ex: "pdf", "docx").
+    /// - Returns: Type MIME correspondant.
     private static func mimeTypeForExtension(_ ext: String) -> String {
         switch ext {
         case "pdf": return "application/pdf"
@@ -179,7 +207,13 @@ enum DeepLService {
         }
     }
 
-    // MARK: - Vérifier état document
+    // MARK: - Statut du document
+    
+    /// Vérifie l'état de la traduction d’un document.
+    /// - Parameters:
+    ///   - documentId: ID retourné lors de l’upload.
+    ///   - documentKey: Clé retournée lors de l’upload.
+    ///   - completion: Statut actuel du document (ex: "done", "translating", etc.).
     static func checkDocumentStatus(documentId: String, documentKey: String, completion: @escaping (String?) -> Void) {
         guard let url = URL(string: "\(baseURL)/document/\(documentId)?document_key=\(documentKey)") else {
             print("❌ URL statut invalide")
@@ -215,6 +249,12 @@ enum DeepLService {
     }
 
     // MARK: - Télécharger fichier traduit
+    
+    /// Télécharge le fichier traduit depuis DeepL.
+    /// - Parameters:
+    ///   - documentId: ID du document.
+    ///   - documentKey: Clé de sécurité.
+    ///   - completion: Contenu binaire du fichier (`Data?`).
     static func downloadTranslatedDocument(documentId: String, documentKey: String, completion: @escaping (Data?) -> Void) {
         guard let url = URL(string: "\(baseURL)/document/\(documentId)/result?document_key=\(documentKey)") else {
             print("❌ URL téléchargement invalide")
@@ -245,9 +285,10 @@ enum DeepLService {
 }
 
 // MARK: - Modèle réponse texte
+/// Représente la réponse JSON retournée par l’API DeepL pour une traduction de texte.
 struct DeepLTranslationResponse: Decodable {
     struct Translation: Decodable {
-        let text: String
+        let text: String // Texte traduit
     }
 
     let translations: [Translation]
